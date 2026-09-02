@@ -1,0 +1,12 @@
+<resources>
+    <string name="app_name">Locked</string>
+    <string name="accessibility_service_description">Locked uses this to notice when Instagram, TikTok, or Brave come to the foreground, so it can show your block screen. It does not read on-screen content.</string>
+
+    <string name="notif_channel_protection_name">Protection Active</string>
+    <string name="notif_channel_protection_desc">Ongoing notice that Locked is actively protecting you</string>
+    <string name="notif_channel_motivation_name">Locked — Motivation</string>
+    <string name="notif_channel_motivation_desc">Occasional motivational reminders</string>
+
+    <string name="notif_protection_title">PROTECTION ACTIVE</string>
+    <string name="notif_protection_text">Locked is watching Instagram, TikTok, and Brave.</string>
+</resources>

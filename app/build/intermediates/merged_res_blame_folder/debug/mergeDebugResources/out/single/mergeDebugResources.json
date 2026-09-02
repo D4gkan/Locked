@@ -1,0 +1,34 @@
+[
+    {
+        "merged": "com.locked.app-debug-60:/drawable_icon.png.flat",
+        "source": "com.locked.app-main-62:/drawable/icon.png"
+    },
+    {
+        "merged": "com.locked.app-debug-60:/xml_data_extraction_rules.xml.flat",
+        "source": "com.locked.app-main-62:/xml/data_extraction_rules.xml"
+    },
+    {
+        "merged": "com.locked.app-debug-60:/xml_backup_rules.xml.flat",
+        "source": "com.locked.app-main-62:/xml/backup_rules.xml"
+    },
+    {
+        "merged": "com.locked.app-debug-60:/xml_accessibility_service_config.xml.flat",
+        "source": "com.locked.app-main-62:/xml/accessibility_service_config.xml"
+    },
+    {
+        "merged": "com.locked.app-debug-60:/mipmap-anydpi-v26_ic_launcher.xml.flat",
+        "source": "com.locked.app-main-62:/mipmap-anydpi-v26/ic_launcher.xml"
+    },
+    {
+        "merged": "com.locked.app-debug-60:/mipmap-anydpi-v26_ic_launcher_round.xml.flat",
+        "source": "com.locked.app-main-62:/mipmap-anydpi-v26/ic_launcher_round.xml"
+    },
+    {
+        "merged": "com.locked.app-debug-60:/drawable_ic_launcher_foreground.xml.flat",
+        "source": "com.locked.app-main-62:/drawable/ic_launcher_foreground.xml"
+    },
+    {
+        "merged": "com.locked.app-debug-60:/drawable_ic_launcher_background.xml.flat",
+        "source": "com.locked.app-main-62:/drawable/ic_launcher_background.xml"
+    }
+]

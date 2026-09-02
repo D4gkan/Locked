@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="almost_black">#0A0A0A</color>
+    <color name="surface_dark">#141414</color>
+    <color name="off_white">#F2F0EC</color>
+    <color name="muted_gray">#8A8A8A</color>
+    <color name="discipline_red">#7A1F1F</color>
+    <color name="calm_amber">#C9A15A</color>
+</resources>

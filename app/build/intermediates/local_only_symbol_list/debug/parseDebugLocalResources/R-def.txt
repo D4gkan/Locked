@@ -1,0 +1,26 @@
+R_DEF: Internal format may change without notice
+local
+color almost_black
+color calm_amber
+color discipline_red
+color muted_gray
+color off_white
+color surface_dark
+drawable ic_launcher_background
+drawable ic_launcher_foreground
+drawable icon
+mipmap ic_launcher
+mipmap ic_launcher_round
+string accessibility_service_description
+string app_name
+string notif_channel_motivation_desc
+string notif_channel_motivation_name
+string notif_channel_protection_desc
+string notif_channel_protection_name
+string notif_protection_text
+string notif_protection_title
+style Theme.Locked
+style Theme.Locked.Block
+xml accessibility_service_config
+xml backup_rules
+xml data_extraction_rules
