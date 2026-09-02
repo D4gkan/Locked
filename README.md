@@ -4,7 +4,12 @@
 
 <p align="center">
 	<strong>LOCKED</strong><br>
-	<sub><strong>VERSION 1.0</strong> &nbsp;&middot;&nbsp; <strong>ANDROID</strong></sub>
+	<a href="https://github.com/">
+		<img src="https://img.shields.io/badge/VERSION-1.0-111111?style=for-the-badge&labelColor=252525&color=8F9BA8" alt="Version 1.0">
+	</a>
+	<a href="https://www.android.com/">
+		<img src="https://img.shields.io/badge/PLATFORM-ANDROID-111111?style=for-the-badge&labelColor=252525&color=3DDC84" alt="Platform Android">
+	</a>
 </p>
 
 <p align="center"><em>Personal focus and discipline</em></p>
