@@ -1,9 +1,16 @@
-# LOCKED
-
 > **WARNING**  
 > Locked can place a full-screen blocking screen over selected apps and keep protection running in the background. It is intentionally difficult to bypass: once an app is opened, continuing requires an uninterrupted 20-second hold and confirmation. Review the permissions below before using it as a daily discipline tool.
 
-**v1.0** · **Android** · Personal focus and discipline
+<p align="center">
+	<img src="icon.png" alt="Locked app icon" width="180">
+</p>
+
+<p align="center">
+	<strong>LOCKED</strong><br>
+	<sub>v1.0 &nbsp;|&nbsp; Platform: Android</sub>
+</p>
+
+<p align="center"><em>Personal focus and discipline</em></p>
 
 Locked interrupts selected distractions with a slow motivational sequence, then asks for a deliberate 20-second hold before allowing that opening. It also includes an optional once-a-day morning self-hypnosis session using Android TextToSpeech.
 
