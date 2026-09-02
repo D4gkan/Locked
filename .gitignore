@@ -15,6 +15,6 @@ local.properties
 Thumbs.db
 captures/
 
-# Generated APKs, except the checked-in publish artifact
+# Generated and publish APKs
 *.apk
-!publish/*.apk
+publish/
