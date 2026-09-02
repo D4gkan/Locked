@@ -2,8 +2,9 @@
 	<img src="icon.png" alt="Locked app icon" width="180">
 </p>
 
+<h1 align="center">LOCKED</h1>
+
 <p align="center">
-	<strong>LOCKED</strong><br>
 	<a href="https://github.com/">
 		<img src="https://img.shields.io/badge/VERSION-1.0-111111?style=for-the-badge&labelColor=252525&color=8F9BA8" alt="Version 1.0">
 	</a>
