@@ -1,0 +1,20 @@
+# Gradle and Android build output
+.gradle/
+.kotlin/
+**/build/
+**/.cxx/
+**/externalNativeBuild/
+
+# Local machine configuration
+local.properties
+.idea/
+*.iml
+
+# IDE and OS noise
+.DS_Store
+Thumbs.db
+captures/
+
+# Generated APKs, except the checked-in publish artifact
+*.apk
+!publish/*.apk

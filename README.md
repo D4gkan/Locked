@@ -1,70 +1,98 @@
-# Locked
+# LOCKED
 
-A personal focus/discipline app for Android. Detects Instagram, TikTok, and
-Brave coming to the foreground, interrupts with a slow motivational message
-sequence, then requires an uninterrupted 20-second hold + confirmation to
-proceed -- once, for that single opening. Also includes an optional
-once-a-day morning self-hypnosis session (spoken via TextToSpeech).
+> **WARNING**  
+> Locked can place a full-screen blocking screen over selected apps and keep protection running in the background. It is intentionally difficult to bypass: once an app is opened, continuing requires an uninterrupted 20-second hold and confirmation. Review the permissions below before using it as a daily discipline tool.
 
-## Opening the project
+**v1.0** · **Android** · Personal focus and discipline
 
-1. Open this folder directly in Android Studio (File > Open). Studio will
-   generate the Gradle wrapper jar/scripts automatically on first sync --
-   they aren't included in this export since they're binary files. If it
-   doesn't offer to, run `gradle wrapper` once from a terminal with Gradle
-   installed, or just let Studio's "Sync Project with Gradle Files" handle it.
-2. `compileSdk`/`targetSdk` are set to 35 (Android 15) in
-   `app/build.gradle.kts`. If your installed SDK has Android 16 (API 36)
-   available, bump both to 36 -- nothing else needs to change.
-3. Build and install onto your Galaxy S25 Ultra as normal.
+Locked interrupts selected distractions with a slow motivational sequence, then asks for a deliberate 20-second hold before allowing that opening. It also includes an optional once-a-day morning self-hypnosis session using Android TextToSpeech.
 
-## First run / permissions
+## What It Protects
 
-On first launch you'll see three permission prompts (Accessibility,
-"display over other apps", and Notifications) -- Locked can't function
-without the first two. Grant them, then you land on the home screen.
+Version 1 protects:
 
-## App icon
+- Instagram
+- TikTok, including its alternate regional package
+- Brave Browser
 
-`icon.png` wasn't attached in this session, so the launcher icon is a
-placeholder vector padlock (`app/src/main/res/drawable/ic_launcher_foreground.xml`).
-To swap in your real icon:
+The protected package list is currently defined in `app/src/main/kotlin/com/locked/app/data/ProtectedApps.kt`.
 
-1. Export it as a set of `mipmap-*/ic_launcher_foreground.png` (or a single
-   large PNG and let Android Studio's Image Asset tool
-   [right-click `res` > New > Image Asset] generate the adaptive icon set
-   for you -- easiest route).
-2. Delete the two placeholder vector drawables and let the wizard replace
-   `mipmap-anydpi-v26/ic_launcher.xml` / `ic_launcher_round.xml`.
+## Required Access
 
-## Morning session music
+Locked needs these Android settings to function as designed:
 
-No audio asset is bundled. Drop a royalty-free ambient loop at
-`app/src/main/assets/morning_ambient.mp3` and it's picked up automatically
-(see `PUT_MUSIC_HERE.txt` in that folder). Without it, the morning session
-still runs fine, just without background music.
+| Access | Why it is needed |
+| --- | --- |
+| **Accessibility access** | Detects when Instagram, TikTok, or Brave comes to the foreground. Locked checks the foreground app identity; it does not read on-screen content. |
+| **Display over other apps** | Places the block screen above the app that was opened, immediately. |
+| **Notifications** | Shows the ongoing protection notification and optional motivational reminders. |
+| **Background activity** | The foreground service keeps protection alive, listens for the morning-session trigger, and receives the boot event after restart. |
+| **Wake lock** | Keeps the device awake while the exact 20-second hold is in progress. |
 
-## What's intentionally not here yet
+On Samsung devices, open **Settings > Apps > Locked > Battery** and choose **Unrestricted** if the phone stops protection while Locked is in the background. Android may also show a system confirmation when Accessibility access or overlay access is granted.
 
-- No app-selection UI (packages are hard-coded in `ProtectedApps.kt`, by
-  design, per the spec).
-- No bypass of any kind on the 20-second hold -- this is deliberate.
-- No statistics/streaks/analytics -- deliberate.
+## First Run
 
-## Architecture at a glance
+1. Install and open Locked.
+2. Grant **Accessibility access** and enable Locked in the downloaded-apps or installed-services list.
+3. Grant **Display over other apps**.
+4. Allow **Notifications** when Android requests them.
+5. Return to Locked and start protection.
+6. Optionally configure the morning session and add a royalty-free ambient track.
 
-- `service/ProtectionAccessibilityService.kt` -- event-driven foreground-app
-  detection (TYPE_WINDOW_STATE_CHANGED), launches the block screen.
-- `service/ProtectionForegroundService.kt` -- persistent notification for
-  process resilience + `ACTION_USER_PRESENT` listener for the morning
-  trigger.
-- `unlock/UnlockState.kt` -- the one-time-unlock flag, in memory only.
-- `ui/block/` -- the full block-screen flow (messages -> hold -> confirm).
-- `ui/morning/` -- the morning self-hypnosis session.
-- `data/` -- editable message/script lists + DataStore settings.
+## Try the Published APK
 
-## Known limitation
+The installable v1.0 artifact is in [`publish/locked-v1.0.apk`](publish/locked-v1.0.apk). It is a debug-signed trial build with package ID `com.locked.app.trial`, so it can be installed alongside another Locked package.
 
-This was generated without access to an Android SDK/emulator, so it hasn't
-been compiled in this environment -- review it in Android Studio and let
-its inline error checking catch anything before your first build.
+If Android reports **App not installed** when opening the downloaded file, use the source build below. It gives Android's installer a clearer error and avoids browser download or package-conflict issues.
+
+## Build From Source
+
+### Requirements
+
+- Android Studio
+- Android SDK Platform 35
+- JDK 17
+- A USB-debuggable Android device or an Android emulator
+
+Open this folder in Android Studio and sync the Gradle project. If the Gradle wrapper scripts are present, build with:
+
+```bash
+./gradlew :app:assembleDebug
+```
+
+On Windows:
+
+```powershell
+.\gradlew.bat :app:assembleDebug
+```
+
+The APK is written to `app/build/outputs/apk/debug/`.
+
+To install directly over USB, replace the serial with the value shown by `adb devices`:
+
+```bash
+adb devices
+adb install -r app/build/outputs/apk/debug/app-debug.apk
+```
+
+If the wrapper scripts are not included in your checkout, run the build from Android Studio or generate them once with an installed Gradle distribution:
+
+```bash
+gradle wrapper
+```
+
+## Morning Audio
+
+Place a royalty-free file at `app/src/main/assets/morning_ambient.mp3`. The morning session works without it, but will have no background music.
+
+## Project Shape
+
+- `service/` detects protected apps and keeps protection alive.
+- `ui/block/` contains the motivational sequence, hold timer, and confirmation.
+- `ui/morning/` contains the optional morning session.
+- `data/` contains settings, scripts, messages, and protected package names.
+
+## License
+
+Released under the [MIT License](LICENSE).
