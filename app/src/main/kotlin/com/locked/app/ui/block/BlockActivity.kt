@@ -16,6 +16,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import com.locked.app.data.MotivationalMessages
+import com.locked.app.service.ProtectionAccessibilityService
 import com.locked.app.ui.theme.LockedTheme
 import com.locked.app.unlock.UnlockState
 
@@ -56,13 +57,10 @@ class BlockActivity : ComponentActivity() {
 
         enableEdgeToEdge()
 
-        // Back is intentionally NOT a bypass: it just backgrounds the task
-        // rather than revealing the protected app, and never marks anything
-        // as unlocked. Handled via the dispatcher (not a deprecated
-        // onBackPressed override) so it also works with predictive back.
+        // Consume both button Back and gesture Back. Leaving this activity
+        // would reveal the protected activity underneath it.
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
-                moveTaskToBack(true)
             }
         })
 
@@ -82,6 +80,16 @@ class BlockActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    override fun onStart() {
+        super.onStart()
+        ProtectionAccessibilityService.notifyBlockActivityStarted(blockedPackage)
+    }
+
+    override fun onStop() {
+        ProtectionAccessibilityService.notifyBlockActivityStopped(blockedPackage)
+        super.onStop()
     }
 
     override fun onNewIntent(intent: android.content.Intent) {

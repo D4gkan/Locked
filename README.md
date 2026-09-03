@@ -6,7 +6,7 @@
 
 <p align="center">
 	<a href="https://github.com/">
-		<img src="https://img.shields.io/badge/VERSION-1.0-111111?style=for-the-badge&labelColor=252525&color=8F9BA8" alt="Version 1.0">
+		<img src="https://img.shields.io/badge/VERSION-1.0.1-111111?style=for-the-badge&labelColor=252525&color=8F9BA8" alt="Version 1.0.1">
 	</a>
 	<a href="https://www.android.com/">
 		<img src="https://img.shields.io/badge/PLATFORM-ANDROID-111111?style=for-the-badge&labelColor=252525&color=3DDC84" alt="Platform Android">
@@ -27,6 +27,8 @@ Version 1 protects:
 - Instagram
 - TikTok, including its alternate regional package
 - Brave Browser
+- YouTube
+- X / Twitter
 
 The protected package list is currently defined in `app/src/main/kotlin/com/locked/app/data/ProtectedApps.kt`.
 
@@ -36,7 +38,7 @@ Locked needs these Android settings to function as designed:
 
 | Access | Why it is needed |
 | --- | --- |
-| **Accessibility access** | Detects when Instagram, TikTok, or Brave comes to the foreground. Locked checks the foreground app identity; it does not read on-screen content. |
+| **Accessibility access** | Detects when Instagram, TikTok, Brave, YouTube, or X comes to the foreground. Locked checks the foreground app identity; it does not read on-screen content. |
 | **Display over other apps** | Places the block screen above the app that was opened, immediately. |
 | **Notifications** | Shows the ongoing protection notification and optional motivational reminders. |
 | **Background activity** | The foreground service keeps protection alive, listens for the morning-session trigger, and receives the boot event after restart. |
@@ -55,7 +57,7 @@ On Samsung devices, open **Settings > Apps > Locked > Battery** and choose **Unr
 
 ## Try the Published APK
 
-The installable v1.0 artifact is in [`publish/locked-v1.0.apk`](publish/locked-v1.0.apk). It is a debug-signed trial build with package ID `com.locked.app.trial`, so it can be installed alongside another Locked package.
+The installable v1.0.1 artifact is in [`publish/locked-v1.0.1.apk`](publish/locked-v1.0.1.apk). It is a release build with package ID `com.locked.app`, version `1.0.1`.
 
 If Android reports **App not installed** when opening the downloaded file, use the source build below. It gives Android's installer a clearer error and avoids browser download or package-conflict issues.
 

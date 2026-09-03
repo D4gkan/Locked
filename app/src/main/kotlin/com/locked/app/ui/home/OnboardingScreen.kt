@@ -53,7 +53,7 @@ fun OnboardingScreen(
 
         PermissionRow(
             title = "Accessibility access",
-            description = "Lets Locked notice when Instagram, TikTok, or Brave open.",
+            description = "Lets Locked notice when Instagram, TikTok, Brave, YouTube, or X open.",
             granted = accessibilityGranted,
             onRequest = onRequestAccessibility
         )

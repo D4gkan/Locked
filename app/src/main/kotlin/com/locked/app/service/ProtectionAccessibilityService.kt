@@ -11,6 +11,7 @@ import com.locked.app.unlock.UnlockState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
@@ -32,9 +33,14 @@ class ProtectionAccessibilityService : AccessibilityService() {
     private lateinit var settingsRepository: SettingsRepository
 
     private var lastForegroundPackage: String? = null
+    @Volatile
+    private var blockActivityPackage: String? = null
+    @Volatile
+    private var blockLaunchRequestedPackage: String? = null
 
     override fun onServiceConnected() {
         super.onServiceConnected()
+        instance = this
         settingsRepository = SettingsRepository(applicationContext)
         Log.i(TAG, "Accessibility service connected")
     }
@@ -45,12 +51,12 @@ class ProtectionAccessibilityService : AccessibilityService() {
 
         val packageName = event.packageName?.toString() ?: return
         if (packageName == applicationContext.packageName) {
-            // Ignore our own UI (e.g. the block screen itself) becoming
-            // foreground -- it is not something to react to.
+            // The block activity reports its own lifecycle separately. Its
+            // accessibility events must not change the protected-package
+            // session underneath it.
             return
         }
 
-        if (packageName == lastForegroundPackage) return
         val previousPackage = lastForegroundPackage
         lastForegroundPackage = packageName
 
@@ -65,10 +71,16 @@ class ProtectionAccessibilityService : AccessibilityService() {
 
     private fun handleProtectedPackageForeground(packageName: String) {
         if (UnlockState.isUnlocked(packageName)) return
+        if (blockActivityPackage == packageName) return
+        if (blockLaunchRequestedPackage == packageName) return
 
+        blockLaunchRequestedPackage = packageName
         serviceScope.launch {
             val protectionOn = settingsRepository.protectionEnabled.first()
-            if (!protectionOn) return@launch
+            if (!protectionOn) {
+                blockLaunchRequestedPackage = null
+                return@launch
+            }
             launchBlockScreen(packageName)
         }
     }
@@ -85,11 +97,44 @@ class ProtectionAccessibilityService : AccessibilityService() {
         startActivity(intent)
     }
 
+    private fun onBlockActivityStarted(packageName: String) {
+        blockActivityPackage = packageName
+        blockLaunchRequestedPackage = null
+    }
+
+    private fun onBlockActivityStopped(packageName: String) {
+        if (blockActivityPackage == packageName) {
+            blockActivityPackage = null
+            blockLaunchRequestedPackage = null
+        } else if (blockLaunchRequestedPackage == packageName) {
+            blockLaunchRequestedPackage = null
+        }
+    }
+
     override fun onInterrupt() {
         Log.w(TAG, "Accessibility service interrupted")
     }
 
+    override fun onDestroy() {
+        if (instance === this) {
+            instance = null
+        }
+        serviceScope.cancel()
+        super.onDestroy()
+    }
+
     companion object {
         private const val TAG = "ProtectionA11yService"
+
+        @Volatile
+        private var instance: ProtectionAccessibilityService? = null
+
+        fun notifyBlockActivityStarted(packageName: String) {
+            instance?.onBlockActivityStarted(packageName)
+        }
+
+        fun notifyBlockActivityStopped(packageName: String) {
+            instance?.onBlockActivityStopped(packageName)
+        }
     }
 }

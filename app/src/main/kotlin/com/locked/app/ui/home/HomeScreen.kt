@@ -62,6 +62,8 @@ fun HomeScreen(
         ProtectedAppRow(ProtectedApps.displayName(ProtectedApps.INSTAGRAM))
         ProtectedAppRow(ProtectedApps.displayName(ProtectedApps.TIKTOK))
         ProtectedAppRow(ProtectedApps.displayName(ProtectedApps.BRAVE))
+        ProtectedAppRow(ProtectedApps.displayName(ProtectedApps.YOUTUBE))
+        ProtectedAppRow(ProtectedApps.displayName(ProtectedApps.X))
 
         Spacer(modifier = Modifier.weight(1f))
 

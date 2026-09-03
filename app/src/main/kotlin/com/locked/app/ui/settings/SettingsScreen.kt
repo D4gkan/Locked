@@ -50,6 +50,8 @@ fun SettingsScreen(
             ProtectedRow(ProtectedApps.displayName(ProtectedApps.INSTAGRAM))
             ProtectedRow(ProtectedApps.displayName(ProtectedApps.TIKTOK))
             ProtectedRow(ProtectedApps.displayName(ProtectedApps.BRAVE))
+            ProtectedRow(ProtectedApps.displayName(ProtectedApps.YOUTUBE))
+            ProtectedRow(ProtectedApps.displayName(ProtectedApps.X))
         }
 
         HorizontalDivider(color = androidx.compose.ui.graphics.Color(0xFF262626), modifier = Modifier.padding(vertical = 24.dp))

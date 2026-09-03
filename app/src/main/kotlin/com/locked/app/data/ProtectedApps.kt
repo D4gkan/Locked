@@ -15,8 +15,10 @@ object ProtectedApps {
     const val TIKTOK_ALT = "com.ss.android.ugc.trill"
 
     const val BRAVE = "com.brave.browser"
+    const val YOUTUBE = "com.google.android.youtube"
+    const val X = "com.twitter.android"
 
-    val ALL: Set<String> = setOf(INSTAGRAM, TIKTOK, TIKTOK_ALT, BRAVE)
+    val ALL: Set<String> = setOf(INSTAGRAM, TIKTOK, TIKTOK_ALT, BRAVE, YOUTUBE, X)
 
     fun isProtected(packageName: String?): Boolean =
         packageName != null && packageName in ALL
@@ -25,6 +27,8 @@ object ProtectedApps {
         INSTAGRAM -> "Instagram"
         TIKTOK, TIKTOK_ALT -> "TikTok"
         BRAVE -> "Brave"
+        YOUTUBE -> "YouTube"
+        X -> "X / Twitter"
         else -> "App"
     }
 }
