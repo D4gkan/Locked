@@ -14,11 +14,13 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.lifecycleScope
 import com.locked.app.data.SettingsRepository
 import com.locked.app.service.ProtectionForegroundService
 import com.locked.app.ui.settings.SettingsActivity
 import com.locked.app.ui.theme.LockedTheme
 import com.locked.app.util.PermissionHelper
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
 
@@ -59,6 +61,12 @@ class MainActivity : ComponentActivity() {
                         protectionEnabled = protectionEnabled,
                         onOpenSettings = {
                             startActivity(Intent(this, SettingsActivity::class.java))
+                        },
+                        onDisableProtection = {
+                            lifecycleScope.launch {
+                                settingsRepository.setProtectionEnabled(false)
+                                ProtectionForegroundService.stop(this@MainActivity)
+                            }
                         }
                     )
                 } else {

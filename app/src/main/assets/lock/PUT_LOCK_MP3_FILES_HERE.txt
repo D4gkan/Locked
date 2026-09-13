@@ -1,0 +1,2 @@
+Add one or more MP3 files to this folder. One is selected randomly for each lock screen.
+Only .mp3 files are supported here.

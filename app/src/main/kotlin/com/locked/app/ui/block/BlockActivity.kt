@@ -1,5 +1,6 @@
 package com.locked.app.ui.block
 
+import android.media.MediaPlayer
 import android.os.Build
 import android.os.Bundle
 import android.view.WindowManager
@@ -19,11 +20,12 @@ import com.locked.app.data.MotivationalMessages
 import com.locked.app.service.ProtectionAccessibilityService
 import com.locked.app.ui.theme.LockedTheme
 import com.locked.app.unlock.UnlockState
+import com.locked.app.util.RandomAudioAsset
 
 /**
  * Full-screen activity shown the instant a protected package reaches the
- * foreground. Owns the whole sequence: motivational messages -> LOCKED
- * screen with 20s hold -> confirmation -> finish() (which reveals the
+ * foreground. Owns the whole sequence: 20s hold -> confirmation -> finish()
+ * (which reveals the
  * protected app underneath, since it was never destroyed -- only this
  * activity's task was drawn on top of it).
  *
@@ -34,6 +36,7 @@ import com.locked.app.unlock.UnlockState
 class BlockActivity : ComponentActivity() {
 
     private var blockedPackage: String = ""
+    private var musicPlayer: MediaPlayer? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -56,6 +59,7 @@ class BlockActivity : ComponentActivity() {
         }
 
         enableEdgeToEdge()
+        startLockMusic()
 
         // Consume both button Back and gesture Back. Leaving this activity
         // would reveal the protected activity underneath it.
@@ -73,6 +77,7 @@ class BlockActivity : ComponentActivity() {
                 ) {
                     BlockFlow(
                         onUnlockGranted = {
+                            stopLockMusic()
                             UnlockState.markUnlocked(blockedPackage)
                             finish()
                         }
@@ -92,6 +97,41 @@ class BlockActivity : ComponentActivity() {
         super.onStop()
     }
 
+    private fun startLockMusic() {
+        try {
+            val assetName = RandomAudioAsset.choose(assets, "lock", setOf("mp3")) ?: return
+            val asset = assets.openFd("lock/$assetName")
+            musicPlayer = MediaPlayer().apply {
+                setDataSource(asset.fileDescriptor, asset.startOffset, asset.length)
+                isLooping = true
+                setVolume(0.35f, 0.35f)
+                prepare()
+                start()
+            }
+            asset.close()
+        } catch (exception: Exception) {
+            musicPlayer?.release()
+            musicPlayer = null
+        }
+    }
+
+    private fun stopLockMusic() {
+        musicPlayer?.apply {
+            try {
+                stop()
+                release()
+            } catch (exception: Exception) {
+                // The player may already be released.
+            }
+        }
+        musicPlayer = null
+    }
+
+    override fun onDestroy() {
+        stopLockMusic()
+        super.onDestroy()
+    }
+
     override fun onNewIntent(intent: android.content.Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
@@ -107,21 +147,13 @@ class BlockActivity : ComponentActivity() {
     }
 }
 
-private enum class BlockStage { MESSAGES, LOCK, CONFIRM }
+private enum class BlockStage { LOCK, CONFIRM }
 
 @androidx.compose.runtime.Composable
 private fun BlockFlow(onUnlockGranted: () -> Unit) {
-    var stage by remember { mutableStateOf(BlockStage.MESSAGES) }
+    var stage by remember { mutableStateOf(BlockStage.LOCK) }
 
     when (stage) {
-        BlockStage.MESSAGES -> com.locked.app.util.FadeMessageSequence(
-            lines = MotivationalMessages.SEQUENCE,
-            holdMillis = MotivationalMessages.VISIBLE_MS,
-            fadeInMillis = MotivationalMessages.FADE_IN_MS.toInt(),
-            fadeOutMillis = MotivationalMessages.FADE_OUT_MS.toInt(),
-            onFinished = { stage = BlockStage.LOCK }
-        )
-
         BlockStage.LOCK -> LockScreen(
             onHoldComplete = { stage = BlockStage.CONFIRM }
         )

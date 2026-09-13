@@ -7,7 +7,6 @@ package com.locked.app.data
 object MotivationalMessages {
     val SEQUENCE: List<String> = listOf(
         "Did you intend to enter this app?",
-        "Are you sure you're locked in?",
         "Is it worth it?",
         "Do something productive."
     )

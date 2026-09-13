@@ -5,6 +5,8 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -13,12 +15,14 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.unit.dp
@@ -26,7 +30,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import kotlinx.coroutines.delay
 
-private const val HOLD_DURATION_MS = 20_000L
+private const val HOLD_DURATION_MS = 30_000L
 private const val TICK_MS = 16L
 
 /**
@@ -40,10 +44,13 @@ private const val TICK_MS = 16L
 @Composable
 fun HoldToUnlockButton(
     modifier: Modifier = Modifier,
+    messageLines: List<String> = emptyList(),
     onHoldComplete: () -> Unit
 ) {
     var elapsedMs by remember { mutableFloatStateOf(0f) }
     var isPressed by remember { mutableStateOf(false) }
+    var messageIndex by remember { mutableIntStateOf(0) }
+    var messageAlpha by remember { mutableFloatStateOf(1f) }
 
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
@@ -73,8 +80,34 @@ fun HoldToUnlockButton(
         }
     }
 
+    LaunchedEffect(messageIndex, isPressed) {
+        if (!isPressed || messageLines.isEmpty()) {
+            messageAlpha = 1f
+            return@LaunchedEffect
+        }
+        messageAlpha = 0f
+        delay(100L)
+        messageAlpha = 1f
+    }
+
+    LaunchedEffect(isPressed) {
+        if (!isPressed || messageLines.isEmpty()) return@LaunchedEffect
+        messageIndex = 0
+        while (isPressed) {
+            delay(2_600L)
+            if (isPressed) {
+                messageIndex = (messageIndex + 1) % messageLines.size
+            }
+        }
+    }
+
     val progress = (elapsedMs / HOLD_DURATION_MS).coerceIn(0f, 1f)
-    val secondsShown = (elapsedMs / 1000f).coerceAtMost(20f)
+    val secondsShown = (elapsedMs / 1000f).coerceAtMost(30f)
+    val animatedMessageAlpha by animateFloatAsState(
+        targetValue = messageAlpha,
+        animationSpec = tween(durationMillis = 650),
+        label = "lockMessageFade"
+    )
 
     Box(
         modifier = modifier
@@ -110,13 +143,27 @@ fun HoldToUnlockButton(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    text = if (isPressed) "HOLDING…" else "HOLD TO UNLOCK",
+                    text = if (isPressed && messageLines.isNotEmpty()) {
+                        messageLines[messageIndex]
+                    } else if (isPressed) {
+                        "HOLDING"
+                    } else {
+                        "HOLD TO UNLOCK"
+                    },
                     style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.onBackground
+                    color = MaterialTheme.colorScheme.onBackground,
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                    modifier = Modifier.graphicsLayer {
+                        alpha = if (isPressed && messageLines.isNotEmpty()) {
+                            animatedMessageAlpha
+                        } else {
+                            1f
+                        }
+                    }
                 )
                 if (isPressed) {
                     Text(
-                        text = "%.1f / 20.0".format(secondsShown),
+                        text = "%.1f / 30.0".format(secondsShown),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.outline
                     )

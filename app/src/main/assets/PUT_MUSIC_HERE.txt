@@ -1,8 +1,0 @@
-Drop a royalty-free ambient loop here named exactly:
-
-    morning_ambient.mp3
-
-MorningActivity will automatically loop it under the narration, fading in
-over ~2 seconds. If this file isn't present, the morning session still
-works fine -- it just plays without background music. Delete this text
-file once you've added the real asset (it isn't referenced by any code).

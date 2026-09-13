@@ -3,8 +3,6 @@ package com.locked.app.ui.morning
 import android.media.MediaPlayer
 import android.os.Build
 import android.os.Bundle
-import android.speech.tts.TextToSpeech
-import android.speech.tts.UtteranceProgressListener
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
@@ -21,12 +19,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -41,32 +39,22 @@ import com.locked.app.data.MorningScript
 import com.locked.app.data.NarrationLine
 import com.locked.app.data.SettingsRepository
 import com.locked.app.ui.theme.LockedTheme
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.channels.Channel
+import com.locked.app.util.RandomAudioAsset
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import java.util.Locale
-import java.util.UUID
+import java.time.LocalDate
 
 /**
  * Full-screen calming narration shown once per configured morning window.
- * Not designed to be inescapable like BlockActivity -- a delayed Skip
- * affordance is intentionally present (see MorningScript.SKIP_AVAILABLE_AFTER_MS)
- * so a genuine emergency (a call to make, an alarm running late) is never
- * blocked by a wellness feature.
+ * Behaves like BlockActivity while the session is running: Back and task
+ * navigation cannot dismiss the session before the narration completes.
  */
 class MorningActivity : ComponentActivity() {
 
-    private var tts: TextToSpeech? = null
-    private var ttsReady = false
     private var musicPlayer: MediaPlayer? = null
+    private var meditationDurationMs by mutableLongStateOf(0L)
     private lateinit var settingsRepository: SettingsRepository
-
-    // Bridges TTS's utterance-completion callback (fired on a non-Compose
-    // thread) into the suspend-based narration loop below.
-    private val utteranceDone = Channel<Unit>(Channel.CONFLATED)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -88,14 +76,10 @@ class MorningActivity : ComponentActivity() {
 
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
-                // Back behaves like Skip -- this is a wellness screen, not
-                // a lock, so there is no reason to trap the user here.
-                finishSession()
             }
         })
 
-        initTts()
-        startAmbientMusic()
+        startMeditationMedia()
 
         setContent {
             LockedTheme {
@@ -106,85 +90,33 @@ class MorningActivity : ComponentActivity() {
                 ) {
                     MorningScreen(
                         settingsRepository = settingsRepository,
-                        onSpeak = { text, utteranceId -> speak(text, utteranceId) },
-                        awaitUtteranceDone = { utteranceDone.receive() },
-                        onFinished = { finishSession() },
-                        onSkip = { finishSession() }
+                        mediaDurationMs = meditationDurationMs,
+                        onFinished = { finishSession() }
                     )
                 }
             }
         }
     }
 
-    private fun initTts() {
-        tts = TextToSpeech(this) { status ->
-            if (status == TextToSpeech.SUCCESS) {
-                tts?.language = Locale.getDefault()
-                tts?.setSpeechRate(0.85f)
-                tts?.setPitch(0.95f)
-                tts?.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
-                    override fun onStart(utteranceId: String?) {}
-                    override fun onDone(utteranceId: String?) {
-                        utteranceDone.trySend(Unit)
-                    }
-                    @Deprecated("Deprecated in Java")
-                    override fun onError(utteranceId: String?) {
-                        utteranceDone.trySend(Unit)
-                    }
-                })
-                ttsReady = true
-            }
-        }
-    }
-
-    private fun speak(text: String, utteranceId: String) {
-        if (ttsReady) {
-            tts?.speak(text, TextToSpeech.QUEUE_FLUSH, null, utteranceId)
-        } else {
-            // TTS engine not ready (rare) -- fall back to a fixed delay so
-            // the visual sequence still proceeds at a reasonable pace.
-            CoroutineScope(Dispatchers.Default).launch {
-                delay(1800)
-                utteranceDone.trySend(Unit)
-            }
-        }
-    }
-
-    /**
-     * Loops a bundled ambient bed under the narration, fading in over 2s.
-     * No royalty-free track is bundled by default -- drop one at
-     * app/src/main/assets/morning_ambient.mp3 and this picks it up
-     * automatically. Missing asset -> logged and silently skipped, never a
-     * crash.
-     */
-    private fun startAmbientMusic() {
+    private fun startMeditationMedia() {
         try {
-            val afd = assets.openFd("morning_ambient.mp3")
+            val assetName = RandomAudioAsset.chooseForDay(
+                assetManager = assets,
+                directory = "morning",
+                extensions = setOf("mp3", "mp4"),
+                dayOfWeek = LocalDate.now().dayOfWeek
+            ) ?: return
+            val afd = assets.openFd("morning/$assetName")
             musicPlayer = MediaPlayer().apply {
                 setDataSource(afd.fileDescriptor, afd.startOffset, afd.length)
-                isLooping = true
-                setVolume(0f, 0f)
+                setOnCompletionListener { finishSession() }
                 prepare()
+                meditationDurationMs = duration.toLong()
                 start()
             }
-            fadeMusicVolume(target = 0.35f, durationMs = 2000)
+            afd.close()
         } catch (e: Exception) {
-            // No asset present yet -- narration still works fine without
-            // background music.
-        }
-    }
-
-    private fun fadeMusicVolume(target: Float, durationMs: Long) {
-        val player = musicPlayer ?: return
-        lifecycleScope.launch {
-            val steps = 20
-            val stepDelay = durationMs / steps
-            val current = 0f
-            for (i in 1..steps) {
-                val v = current + (target - current) * (i / steps.toFloat())
-                player.setVolume(v, v)
-                delay(stepDelay)
-            }
+            meditationDurationMs = 0L
         }
     }
 
@@ -209,8 +141,6 @@ class MorningActivity : ComponentActivity() {
     }
 
     override fun onDestroy() {
-        tts?.stop()
-        tts?.shutdown()
         stopAmbientMusic()
         super.onDestroy()
     }
@@ -219,15 +149,12 @@ class MorningActivity : ComponentActivity() {
 @Composable
 private fun MorningScreen(
     settingsRepository: SettingsRepository,
-    onSpeak: (String, String) -> Unit,
-    awaitUtteranceDone: suspend () -> Unit,
-    onFinished: () -> Unit,
-    onSkip: () -> Unit
+    mediaDurationMs: Long,
+    onFinished: () -> Unit
 ) {
     var script by remember { mutableStateOf<List<NarrationLine>>(emptyList()) }
     var lineIndex by remember { mutableIntStateOf(-1) }
     var alpha by remember { mutableFloatStateOf(0f) }
-    var skipVisible by remember { mutableStateOf(false) }
 
     val animatedAlpha by animateFloatAsState(
         targetValue = alpha,
@@ -240,24 +167,21 @@ private fun MorningScreen(
         script = MorningScript.build(name)
     }
 
-    LaunchedEffect(Unit) {
-        delay(MorningScript.SKIP_AVAILABLE_AFTER_MS)
-        skipVisible = true
-    }
-
-    LaunchedEffect(script) {
+    LaunchedEffect(script, mediaDurationMs) {
         if (script.isEmpty()) return@LaunchedEffect
+        val lineDurationMs = if (mediaDurationMs > 0L) {
+            (mediaDurationMs / script.size).coerceAtLeast(1000L)
+        } else {
+            3000L
+        }
         for (i in script.indices) {
             lineIndex = i
             alpha = 1f
-            val utteranceId = UUID.randomUUID().toString()
-            onSpeak(script[i].text, utteranceId)
-            awaitUtteranceDone()
-            delay((script[i].pauseAfterSeconds * 1000).toLong())
+            delay(lineDurationMs)
             alpha = 0f
             delay(500)
         }
-        onFinished()
+        if (mediaDurationMs <= 0L) onFinished()
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -279,19 +203,5 @@ private fun MorningScreen(
             }
         }
 
-        if (skipVisible) {
-            TextButton(
-                onClick = onSkip,
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .padding(bottom = 32.dp)
-            ) {
-                Text(
-                    text = "Skip",
-                    color = MaterialTheme.colorScheme.outline,
-                    style = MaterialTheme.typography.bodyMedium
-                )
-            }
-        }
     }
 }

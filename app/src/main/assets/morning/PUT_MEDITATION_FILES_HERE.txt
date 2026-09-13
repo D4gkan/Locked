@@ -1,0 +1,2 @@
+Add one or more MP3 or MP4 files to this folder. One is selected randomly for each morning session.
+The selected file duration controls the session length. MP4 video is used for its audio only.

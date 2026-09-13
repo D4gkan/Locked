@@ -16,7 +16,7 @@ android {
         minSdk = 26
         targetSdk = 35
         versionCode = 2
-        versionName = "1.0.1"
+        versionName = "1.0.2"
 
         vectorDrawables {
             useSupportLibrary = true
@@ -48,6 +48,10 @@ android {
 
     buildFeatures {
         compose = true
+    }
+
+    androidResources {
+        noCompress += listOf("mp3", "mp4")
     }
 
     packaging {

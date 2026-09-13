@@ -22,7 +22,8 @@ import com.locked.app.data.ProtectedApps
 @Composable
 fun HomeScreen(
     protectionEnabled: Boolean,
-    onOpenSettings: () -> Unit
+    onOpenSettings: () -> Unit,
+    onDisableProtection: () -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -73,6 +74,15 @@ fun HomeScreen(
                 color = MaterialTheme.colorScheme.outline,
                 style = MaterialTheme.typography.bodyMedium
             )
+        }
+        if (protectionEnabled) {
+            TextButton(onClick = onDisableProtection) {
+                Text(
+                    text = "Disable protection",
+                    color = MaterialTheme.colorScheme.outline,
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            }
         }
     }
 }

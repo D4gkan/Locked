@@ -75,6 +75,4 @@ object MorningScript {
         )
     }
 
-    /** Skip affordance only appears after this many milliseconds. */
-    const val SKIP_AVAILABLE_AFTER_MS = 10_000L
 }

@@ -7,7 +7,9 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.ServiceInfo
+import android.app.KeyguardManager
 import android.os.Build
+import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.app.ServiceCompat
 import androidx.core.content.ContextCompat
@@ -22,6 +24,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.LocalTime
+import java.util.concurrent.atomic.AtomicBoolean
 
 /**
  * A lightweight always-on foreground service. Its jobs:
@@ -41,10 +44,13 @@ class ProtectionForegroundService : Service() {
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private lateinit var settingsRepository: SettingsRepository
     private var receiverRegistered = false
+    private val morningLaunchRequested = AtomicBoolean(false)
 
     private val userPresentReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
-            if (intent?.action == Intent.ACTION_USER_PRESENT) {
+            if (intent?.action == Intent.ACTION_USER_PRESENT ||
+                intent?.action == Intent.ACTION_SCREEN_ON
+            ) {
                 checkAndMaybeLaunchMorningSession()
             }
         }
@@ -60,9 +66,12 @@ class ProtectionForegroundService : Service() {
         }
         ServiceCompat.startForeground(this, NOTIFICATION_ID, buildNotification(), notificationType)
 
-        val filter = IntentFilter(Intent.ACTION_USER_PRESENT)
+        val filter = IntentFilter().apply {
+            addAction(Intent.ACTION_USER_PRESENT)
+            addAction(Intent.ACTION_SCREEN_ON)
+        }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            registerReceiver(userPresentReceiver, filter, Context.RECEIVER_NOT_EXPORTED)
+            registerReceiver(userPresentReceiver, filter, Context.RECEIVER_EXPORTED)
         } else {
             registerReceiver(userPresentReceiver, filter)
         }
@@ -71,6 +80,10 @@ class ProtectionForegroundService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        // The service can start after the phone has already been unlocked,
+        // so do not rely solely on the next USER_PRESENT broadcast.
+        checkAndMaybeLaunchMorningSession()
+
         // START_STICKY: ask the system to recreate this service if it's
         // killed under memory pressure, with a null intent next time.
         return START_STICKY
@@ -98,6 +111,9 @@ class ProtectionForegroundService : Service() {
 
     private fun checkAndMaybeLaunchMorningSession() {
         serviceScope.launch {
+            val keyguard = getSystemService(KeyguardManager::class.java)
+            if (keyguard.isKeyguardLocked) return@launch
+
             val enabled = settingsRepository.morningEnabled.first()
             if (!enabled) return@launch
 
@@ -117,14 +133,26 @@ class ProtectionForegroundService : Service() {
             }
             if (!withinWindow) return@launch
 
+            if (!morningLaunchRequested.compareAndSet(false, true)) return@launch
+
             val intent = Intent(this@ProtectionForegroundService, MorningActivity::class.java).apply {
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                addFlags(
+                    Intent.FLAG_ACTIVITY_NEW_TASK or
+                        Intent.FLAG_ACTIVITY_CLEAR_TOP or
+                        Intent.FLAG_ACTIVITY_SINGLE_TOP
+                )
             }
-            startActivity(intent)
+            try {
+                startActivity(intent)
+            } catch (exception: Exception) {
+                morningLaunchRequested.set(false)
+                Log.e(TAG, "Unable to launch morning session", exception)
+            }
         }
     }
 
     companion object {
+        private const val TAG = "LockedProtectionService"
         private const val NOTIFICATION_ID = 1001
 
         fun start(context: Context) {
